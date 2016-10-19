@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH
 option(LIBAUDIOSTREAM_SHARED "Build a shared library" OFF)
 option(LIBAUDIOSTREAM_SAMPLES "Build examples" OFF)
 option(LIBAUDIOSTREAM_TESTS "Build tests" OFF)
-option(LIBAUDIOSTREAM_STATIC "Build a static library with no dependencies. Implies SHARED=False" ON)
+option(LIBAUDIOSTREAM_CONTAINED "Link to most dependencies statically." OFF)
 if(APPLE)
     option(LIBAUDIOSTREAM_FRAMEWORK "Build an OS X framework" ON)
     option(LIBAUDIOSTREAM_UNIVERSAL "Build universal binaries" OFF)
@@ -23,8 +23,7 @@ project(libaudiostream
     LANGUAGES C CXX)
 
 # Handle static linking
-if(LIBAUDIOSTREAM_STATIC)
-  set(LIBAUDIOSTREAM_SHARED OFF)
+if(LIBAUDIOSTREAM_CONTAINED)
   if(WIN32)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
     set(LIBAUDIOSTREAM_LIBS_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/windows")
@@ -150,8 +149,23 @@ find_package(Sndfile REQUIRED)
 find_package(Samplerate REQUIRED)
 find_package(Rubberband REQUIRED)
 find_package(Faust REQUIRED)
-if(${Faust_FOUND})
-  if(LIBAUDIOSTREAM_STATIC)
+
+function(enforce_static theLibName theLibFiles theLibVar)
+  message("${${theLibFiles}}")
+  if("${${theLibFiles}}" MATCHES ".*(\.dylib|\.so|\.dll)")
+    set(${theLibVar} FALSE PARENT_SCOPE)
+    message("${theLibName} FAILED")
+  endif()
+endfunction()
+
+if(LIBAUDIOSTREAM_CONTAINED)
+  enforce_static(Jack JACK_LIBRARIES JACK_FOUND)
+  enforce_static(Portaudio PORTAUDIO_LIBRARIES PORTAUDIO_FOUND)
+  enforce_static(Sndfile SNDFILE_LIBRARIES SNDFILE_FOUND)
+  enforce_static(Samplerate SAMPLERATE_LIBRARIES SAMPLERATE_FOUND)
+  enforce_static(Rubberband RUBBERBAND_LIBRARIES RUBBERBAND_FOUND)
+  enforce_static(Faust FAUST_LIBRARIES FAUST_FOUND)
+  if(${Faust_FOUND})
     find_package(LLVM REQUIRED)
     link_directories("${LLVM_LIBRARY_DIRS}")
     find_package(OpenSSL REQUIRED)
@@ -159,20 +173,20 @@ if(${Faust_FOUND})
 endif()
 
 if(APPLE AND LIBAUDIOSTREAM_FRAMEWORK)
-    add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
-    set_target_properties(LibAudioStream PROPERTIES 
-        FRAMEWORK TRUE
-        FRAMEWORK_VERSION A
-        MACOSX_FRAMEWORK_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macosx/Info-LibAudioStreamPA.plist
-        VERSION ${PROJECT_VERSION}
-        SOVERSION 2.0.0
-        PUBLIC_HEADER src/LibAudioStreamMC++.h)
+  add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
+  set_target_properties(LibAudioStream PROPERTIES 
+      FRAMEWORK TRUE
+      FRAMEWORK_VERSION A
+      MACOSX_FRAMEWORK_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macosx/Info-LibAudioStreamPA.plist
+      VERSION ${PROJECT_VERSION}
+      SOVERSION 2.0.0
+      PUBLIC_HEADER src/LibAudioStreamMC++.h)
 else()
-    if(LIBAUDIOSTREAM_SHARED)
-        add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
-    else()
-        add_library(LibAudioStream STATIC ${CSRC} ${CPPSRC})
-    endif()
+  if(LIBAUDIOSTREAM_SHARED)
+    add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
+  else()
+    add_library(LibAudioStream STATIC ${CSRC} ${CPPSRC})
+  endif()
 endif()
 
 set_target_properties(LibAudioStream PROPERTIES PREFIX "")
@@ -284,6 +298,7 @@ if(${RUBBERBAND_FOUND})
 
   target_link_libraries(LibAudioStream PUBLIC ${RUBBERBAND_LIBRARIES})
   target_include_directories(LibAudioStream PRIVATE ${RUBBERBAND_INCLUDE_DIR})
+  target_compile_definitions(LibAudioStream PRIVATE HAS_RUBBERBAND)
 endif()
 
 # Faust
@@ -365,7 +380,7 @@ export(EXPORT LibAudioStream-targets
   NAMESPACE LibAudioStream::
 )
 
-configure_file(cmake/LibAudioStream-Config.cmake.in
+configure_file(cmake-modules/LibAudioStream-Config.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/LibAudioStream/LibAudioStream-Config.cmake"
   COPYONLY
 )

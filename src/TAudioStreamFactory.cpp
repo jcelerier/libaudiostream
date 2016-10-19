@@ -250,7 +250,11 @@ TAudioStreamPtr TAudioStreamFactory::MakeEffectSound(TAudioStreamPtr s1, TAudioE
 TAudioStreamPtr TAudioStreamFactory::MakeRubberBandSound(TAudioStreamPtr s1, double* pitch_shift, double* time_strech)
 {
     TRY_CALL
+#if defined(HAS_RUBBERBAND)
     return (s1) ? new TRubberBandAudioStream(s1, pitch_shift, time_strech) : 0;
+#else
+    return nullptr;
+#endif
     CATCH_EXCEPTION_RETURN
 }
 
