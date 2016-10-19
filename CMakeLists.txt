@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH
 option(LIBAUDIOSTREAM_SHARED "Build a shared library" OFF)
 option(LIBAUDIOSTREAM_SAMPLES "Build examples" OFF)
 option(LIBAUDIOSTREAM_TESTS "Build tests" OFF)
-option(LIBAUDIOSTREAM_STATIC "Build a static library with no dependencies. Implies SHARED=False")
+option(LIBAUDIOSTREAM_STATIC "Build a static library with no dependencies. Implies SHARED=False" ON)
 if(APPLE)
     option(LIBAUDIOSTREAM_FRAMEWORK "Build an OS X framework" ON)
     option(LIBAUDIOSTREAM_UNIVERSAL "Build universal binaries" OFF)
