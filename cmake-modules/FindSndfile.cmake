@@ -15,11 +15,39 @@ elseif (SNDFILE_INCLUDE_DIR AND SNDFILE_LIBRARY)
 	set(SNDFILE_FOUND TRUE)
 else()
 	find_path(SNDFILE_INCLUDE_DIR sndfile.h
-		PATHS "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/include"
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/include"
+		  "${SNDFILE_INCLUDE_DIR_HINT}"
 	)
 
 	find_library(SNDFILE_LIBRARY NAMES sndfile sndfile-1 libsndfile libsndfile-1
-		PATHS "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		  "${SNDFILE_LIB_DIR_HINT}"
+	)
+
+	find_library(OGG_LIBRARY NAMES ogg
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		  "${SNDFILE_LIB_DIR_HINT}"
+	)
+
+	find_library(VORBIS_LIBRARY NAMES vorbis
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		  "${SNDFILE_LIB_DIR_HINT}"
+	)
+
+	find_library(VORBIS_ENCODE_LIBRARY NAMES vorbisenc
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		  "${SNDFILE_LIB_DIR_HINT}"
+	)
+
+	find_library(FLAC_LIBRARY NAMES flac
+		PATHS 
+		  "$ENV{ProgramFiles}/Mega-Nerd/libsndfile/lib"
+		  "${SNDFILE_LIB_DIR_HINT}"
 	)
 
 	# Handle the QUIETLY and REQUIRED arguments and set SNDFILE_FOUND to TRUE if
@@ -30,6 +58,18 @@ else()
 
 	if(SNDFILE_FOUND)
 		set(SNDFILE_LIBRARIES ${SNDFILE_LIBRARY})
+		if(OGG_LIBRARY)
+		  set(SNDFILE_LIBRARIES ${OGG_LIBRARY} ${SNDFILE_LIBRARIES})
+		endif()
+		if(VORBIS_LIBRARY)
+		  set(SNDFILE_LIBRARIES ${VORBIS_LIBRARY} ${SNDFILE_LIBRARIES})
+		endif()
+		if(VORBIS_ENCODE_LIBRARY)
+		  set(SNDFILE_LIBRARIES ${VORBIS_ENCODE_LIBRARY} ${SNDFILE_LIBRARIES})
+		endif()
+		if(FLAC_LIBRARY)
+		  set(SNDFILE_LIBRARIES ${FLAC_LIBRARY} ${SNDFILE_LIBRARIES})
+		endif()
 	else()
 		set(SNDFILE_LIBRARIES)
 	endif()

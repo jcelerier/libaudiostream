@@ -2,12 +2,13 @@
 cmake_minimum_required(VERSION 3.4 FATAL_ERROR)
 set(CMAKE_MODULE_PATH
   "${CMAKE_MODULE_PATH}"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules"
 )
 
 option(LIBAUDIOSTREAM_SHARED "Build a shared library" OFF)
 option(LIBAUDIOSTREAM_SAMPLES "Build examples" OFF)
 option(LIBAUDIOSTREAM_TESTS "Build tests" OFF)
+option(LIBAUDIOSTREAM_STATIC "Build a static library with no dependencies. Implies SHARED=False")
 if(APPLE)
     option(LIBAUDIOSTREAM_FRAMEWORK "Build an OS X framework" ON)
     option(LIBAUDIOSTREAM_UNIVERSAL "Build universal binaries" OFF)
@@ -21,6 +22,28 @@ project(libaudiostream
     VERSION 2.0.3
     LANGUAGES C CXX)
 
+# Handle static linking
+if(LIBAUDIOSTREAM_STATIC)
+  set(LIBAUDIOSTREAM_SHARED OFF)
+  if(WIN32)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    set(LIBAUDIOSTREAM_LIBS_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/windows")
+  else()
+    set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+    if(APPLE)
+      set(LIBAUDIOSTREAM_LIBS_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/macosx")
+    endif()
+  endif()
+
+    set(PORTAUDIO_LIB_DIR_HINT "${LIBAUDIOSTREAM_LIBS_FOLDER}" "${PORTAUDIO_LIB_DIR_HINT}")
+    set(SNDFILE_LIB_DIR_HINT "${LIBAUDIOSTREAM_LIBS_FOLDER}" "${SNDFILE_LIB_DIR_HINT}")
+endif()
+
+if(LIBAUDIOSTREAM_SHARED)
+  set(BUILD_SHARED_LIBS ON)
+else()
+  set(BUILD_SHARED_LIBS OFF)
+endif()
 
 if(UNIX AND NOT APPLE)
     find_package(DL REQUIRED)
@@ -127,6 +150,13 @@ find_package(Sndfile REQUIRED)
 find_package(Samplerate REQUIRED)
 find_package(Rubberband REQUIRED)
 find_package(Faust REQUIRED)
+if(${Faust_FOUND})
+  if(LIBAUDIOSTREAM_STATIC)
+    find_package(LLVM REQUIRED)
+    link_directories("${LLVM_LIBRARY_DIRS}")
+    find_package(OpenSSL REQUIRED)
+  endif()
+endif()
 
 if(APPLE AND LIBAUDIOSTREAM_FRAMEWORK)
     add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
@@ -263,6 +293,13 @@ if(${FAUST_FOUND})
 
     target_link_libraries(LibAudioStream PUBLIC ${FAUST_LIBRARIES})
     target_include_directories(LibAudioStream PRIVATE ${FAUST_INCLUDE_DIR})
+
+    if(${LLVM_FOUND})
+      target_link_libraries(LibAudioStream PUBLIC ${LLVM_LDFLAGS} ${LLVM_LIBRARIES})
+    endif()
+    if(${OpenSSL_FOUND})
+      target_link_libraries(LibAudioStream PUBLIC ${OPENSSL_CRYPTO_LIBRARY})
+    endif()
 endif()
 
 if(LIBAUDIOSTREAM_SAMPLES)

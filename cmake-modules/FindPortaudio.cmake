@@ -43,7 +43,7 @@ if(NOT PORTAUDIO2_FOUND OR "${PORTAUDIO_INCLUDE_DIRS}" MATCHES "")
 
   find_library(PORTAUDIO_LIBRARY
     NAMES
-      portaudio
+      portaudioV19 portaudio 
     PATHS
       /usr/lib
       /usr/local/lib
