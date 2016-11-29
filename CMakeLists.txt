@@ -307,6 +307,7 @@ if(${FAUST_FOUND})
     message(${FAUST_LIBRARIES})
 
     target_link_libraries(LibAudioStream PUBLIC ${FAUST_LIBRARIES})
+    message("LINKING WITH ${FAUST_LIBRARIES}")
     target_include_directories(LibAudioStream PRIVATE ${FAUST_INCLUDE_DIR})
 
     if(${LLVM_FOUND})
