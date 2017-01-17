@@ -28,7 +28,7 @@ TEffectAudioStream::TEffectAudioStream(TAudioStreamPtr stream, TAudioEffectInter
 {
     fStream = stream;
     fEffect = effect;
- 	fBufferIn = new TLocalNonInterleavedAudioBuffer<float>(TAudioGlobals::fBufferSize, fEffect->Inputs());
+    fBufferIn = new TLocalNonInterleavedAudioBuffer<float>(TAudioGlobals::fBufferSize, fEffect->Inputs());
     fBufferOut = new TLocalNonInterleavedAudioBuffer<float>(TAudioGlobals::fBufferSize, fEffect->Outputs());
 }
 
@@ -40,25 +40,34 @@ TAudioStreamPtr TEffectAudioStream::CutBegin(long frames)
 long TEffectAudioStream::Read(FLOAT_BUFFER buffer, long framesNum, long framePos)
 {
     assert_stream(framesNum, framePos);
-    
-    float** temp1 = (float**)alloca(fBufferIn->GetChannels()*sizeof(float*));
+
     float** temp2 = (float**)alloca(fBufferOut->GetChannels()*sizeof(float*));
     float** temp3 = (float**)alloca(buffer->GetChannels()*sizeof(float*));
 
-    /* Cleanup temporary fBuffer */
-    UAudioTools::ZeroFloatBlk(fBufferIn->GetFrame(0, temp1), TAudioGlobals::fBufferSize, fEffect->Inputs());
-    
-    // Use temporary fBuffer from the beginning
-    long res = fStream->Read(fBufferIn, framesNum, 0);
-     
-    // Use temporary fBuffer from the beginning
-    fEffect->Process(fBufferIn->GetFrame(0, temp1), fBufferOut->GetFrame(0, temp2), framesNum);
-    
+    long res = framesNum;
+
+    if(fEffect->Inputs() > 0)
+    {
+      float** temp1 = (float**)alloca(fBufferIn->GetChannels()*sizeof(float*));
+      /* Cleanup temporary fBuffer */
+      UAudioTools::ZeroFloatBlk(fBufferIn->GetFrame(0, temp1), TAudioGlobals::fBufferSize, fEffect->Inputs());
+
+      // Use temporary fBuffer from the beginning
+      res = fStream->Read(fBufferIn, framesNum, 0);
+
+      // Use temporary fBuffer from the beginning
+      fEffect->Process(fBufferIn->GetFrame(0, temp1), fBufferOut->GetFrame(0, temp2), framesNum);
+    }
+    else
+    {
+      fEffect->Process(nullptr, fBufferOut->GetFrame(0, temp2), framesNum);
+    }
+
     // Mix in buffer
-	UAudioTools::MixFrameToFrameBlk(buffer->GetFrame(framePos, temp3),
-									fBufferOut->GetFrame(0, temp2),
+    UAudioTools::MixFrameToFrameBlk(buffer->GetFrame(framePos, temp3),
+                  fBufferOut->GetFrame(0, temp2),
                                     framesNum,
-									fStream->Channels());
+                  fStream->Channels());
 
     return res;
 }
