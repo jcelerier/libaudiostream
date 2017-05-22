@@ -23,6 +23,7 @@ research@grame.fr
 #ifndef __TReadFileAudioStream__
 #define __TReadFileAudioStream__
 
+#if defined(HAS_SNDFILE)
 #include "TFileAudioStream.h"
 #include "TAudioConstants.h"
 
@@ -74,4 +75,4 @@ class TReadFileAudioStream : public TFileAudioStream
 typedef TReadFileAudioStream * TReadFileAudioStreamPtr;
 
 #endif
-
+#endif

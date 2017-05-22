@@ -21,7 +21,7 @@ research@grame.fr
 
 #ifndef __TSampleRateAudioStream__
 #define __TSampleRateAudioStream__
-
+#if defined(HAS_SAMPLERATE)
 #include "TAudioStream.h"
 #include <samplerate.h>
 
@@ -40,41 +40,42 @@ class TSampleRateAudioStream : public TDecoratedAudioStream
         FLOAT_BUFFER fBuffer;
         float* fTmpBufferIn;
         float* fTmpBufferOut;
-       
+
         SRC_STATE* fResampler;
         double fRatio;
-   
+
         int fReadPos;
         int fReadFrames;
-	
+
     public:
 
         TSampleRateAudioStream(TAudioStreamPtr stream, double ratio, unsigned int quality = SRC_LINEAR);
         virtual ~TSampleRateAudioStream();
-   
+
         virtual long Write(FLOAT_BUFFER buffer, long framesNum, long framePos)
         {
             return 0;
         }
-        
+
         long Read(FLOAT_BUFFER buffer, long framesNum, long framePos);
 
         void Reset();
-        
+
         TAudioStreamPtr CutBegin(long frames);    // Length in frames
-    
+
         TAudioStreamPtr Copy();
-        
+
         long Length()
         {
             return fStream->Length() * fRatio;
         }
-        
+
         void SetRatio(double ratio) { fRatio = ratio; }
         double GetRatio() { return fRatio; }
-        
+
 };
 
 typedef TSampleRateAudioStream * TSampleRateAudioStreamPtr;
 
+#endif
 #endif

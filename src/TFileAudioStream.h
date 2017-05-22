@@ -23,6 +23,7 @@ research@grame.fr
 #ifndef __TFileAudioStream__
 #define __TFileAudioStream__
 
+#if defined(HAS_SNDFILE)
 #include "TBufferedAudioStream.h"
 #include "TCmdHandler.h"
 #include "TAudioConstants.h"
@@ -44,7 +45,7 @@ class TFileAudioStream : public TBufferedAudioStream, public TCmdHandler
         std::string fName;
         SNDFILE* fFile;
         float* fFileBuffer;
-     
+
         static void ReadBufferAux(TFileAudioStream* obj, FLOAT_BUFFER buffer, long framesNum, long framePos);
         static void WriteBufferAux(TFileAudioStream* obj, FLOAT_BUFFER buffer, long framesNum, long framePos);
 
@@ -52,19 +53,19 @@ class TFileAudioStream : public TBufferedAudioStream, public TCmdHandler
         void WriteBuffer(FLOAT_BUFFER buffer, long framesNum, long framePos);
 
     public:
-     
+
         TFileAudioStream(std::string name): TBufferedAudioStream(), fName(name)
         {}
         virtual ~TFileAudioStream()
         {}
 
         virtual void Reset() = 0;
-		virtual TAudioStreamPtr CutBegin(long frames) = 0;
+    virtual TAudioStreamPtr CutBegin(long frames) = 0;
         virtual long Length() = 0;
         virtual TAudioStreamPtr Copy() = 0;
 };
 
 typedef TFileAudioStream * TFileAudioStreamPtr;
-
+#endif
 #endif
 

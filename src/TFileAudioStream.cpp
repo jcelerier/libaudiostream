@@ -20,6 +20,7 @@ research@grame.fr
 
 */
 
+#if defined(HAS_SNDFILE)
 #include "TFileAudioStream.h"
 #include "TAudioGlobals.h"
 #include "UAudioTools.h"
@@ -63,3 +64,4 @@ void TFileAudioStream::WriteBuffer(FLOAT_BUFFER buffer, long framesNum, long fra
     fManager->ExecCmd((CmdPtr)WriteBufferAux, (long)addReference(), (long)buffer, framesNum, framePos, 0);
 }
 
+#endif

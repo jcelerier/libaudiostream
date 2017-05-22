@@ -19,6 +19,7 @@ research@grame.fr
 
 */
 
+#if defined(HAS_RUBBERBAND)
 #include "TAudioGlobals.h"
 #include "TRubberBandAudioStream.h"
 #include "UTools.h"
@@ -99,6 +100,4 @@ TAudioStreamPtr TRubberBandAudioStream::Copy()
 {
     return new TRubberBandAudioStream(fStream->Copy(), fPitchShift, fTimeStretch);
 }
-
-
-
+#endif

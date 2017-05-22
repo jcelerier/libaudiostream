@@ -20,10 +20,10 @@ research@grame.fr
 
 */
 
+#include <libaudiostream-config.h>
 #include "TExpAudioMixer.h"
 #include "TAudioRendererFactory.h"
 #include "TAudioStreamFactory.h"
-#include "TFaustAudioEffect.h"
 #include "TBufferedInputAudioStream.h"
 #include "TSelectAudioStream.h"
 #include "TAudioDate.h"
@@ -41,6 +41,10 @@ research@grame.fr
 
 #ifdef __NETJACK__
 #include "TNetJackRenderer.h"
+#endif
+
+#if defined(HAS_FAUST)
+#include "TFaustAudioEffect.h"
 #endif
 
 #include "TOfflineRenderer.h"
@@ -691,6 +695,7 @@ AUDIOAPI long ReadSoundPosPtr(AudioStreamPtr sound, float** buffer, long buffer_
 
 AudioEffect AUDIOAPI MakeFaustAudioEffect(const char* name, const char* library_path, const char* draw_path)
 {
+#if defined(HAS_FAUST)
     TAudioGlobals::ClearLibError();
     try {
         return new TModuleFaustAudioEffect(name);
@@ -702,11 +707,14 @@ AudioEffect AUDIOAPI MakeFaustAudioEffect(const char* name, const char* library_
             return 0;
         }
     }
+#else
+    return 0;
+#endif
 }
 
 AudioEffect AUDIOAPI MakeRemoteFaustAudioEffect(const char* name, const char* library_path, const char* draw_path)
 {
-#if REMOTE_DSP
+#if REMOTE_DSP && defined(HAS_FAUST)
     TAudioGlobals::ClearLibError();
     try {
         return new TModuleFaustAudioEffect(name);
@@ -765,6 +773,7 @@ AUDIOAPI void ProcessEffect(AudioEffect effect, float** input, float** output, l
 
 AUDIOAPI const char* GetJsonEffect(AudioEffect effect)
 {
+    #if defined(HAS_FAUST)
     TAudioEffectInterface* effect_tmp = static_cast<TAudioEffectInterface*>(effect);
     TFaustAudioEffectBase* faust_effect;
     if ((faust_effect = dynamic_cast<TFaustAudioEffectBasePtr>(effect_tmp))) {
@@ -772,10 +781,14 @@ AUDIOAPI const char* GetJsonEffect(AudioEffect effect)
     } else {
         return "";
     }
+    #else
+    return "";
+    #endif
 }
 
 AUDIOAPI const char* GetNameEffect(AudioEffect effect)
 {
+    #if defined(HAS_FAUST)
     TAudioEffectInterface* effect_tmp = static_cast<TAudioEffectInterface*>(effect);
     TFaustAudioEffectBase* faust_effect;
     if ((faust_effect = dynamic_cast<TFaustAudioEffectBasePtr>(effect_tmp))) {
@@ -783,6 +796,9 @@ AUDIOAPI const char* GetNameEffect(AudioEffect effect)
     } else {
         return "";
     }
+    #else
+    return "";
+    #endif
 }
 
 AUDIOAPI AudioEffect MakeCopyEffect(AudioEffect effect)
@@ -812,6 +828,7 @@ AUDIOAPI long SetTimedControlValueEffect(AudioPlayerPtr ext_player, const char* 
 
 AUDIOAPI AudioEffectPtr MakeFaustAudioEffectPtr(const char* code, const char* library_path, const char* draw_path)
 {
+#if defined(HAS_FAUST)
     TAudioGlobals::ClearLibError();
     try {
         return new LA_SMARTP<TAudioEffectInterface>(new TModuleFaustAudioEffect(code));
@@ -823,11 +840,14 @@ AUDIOAPI AudioEffectPtr MakeFaustAudioEffectPtr(const char* code, const char* li
             return 0;
         }
     }
+#else
+  return nullptr;
+#endif
 }
 
 AUDIOAPI AudioEffectPtr MakeRemoteFaustAudioEffectPtr(const char* code, const char* library_path, const char* draw_path)
 {
-#if REMOTE_DSP
+#if defined(HAS_FAUST) && REMOTE_DSP
     TAudioGlobals::ClearLibError();
     try {
         return new LA_SMARTP<TAudioEffectInterface>(new TModuleFaustAudioEffect(code));
@@ -850,7 +870,9 @@ static TCodeFaustAudioEffect* gDSP = 0;
 
 AUDIOAPI AudioEffectPtr MakeDispatchFaustAudioEffectPtr(const char* code, const char* library_path, const char* draw_path)
 {
+    #if defined(HAS_FAUST)
     TAudioGlobals::ClearLibError();
+
     try {
         return new LA_SMARTP<TAudioEffectInterface>(new TModuleFaustAudioEffect(code));
     } catch (TLASException& e) {
@@ -865,6 +887,9 @@ AUDIOAPI AudioEffectPtr MakeDispatchFaustAudioEffectPtr(const char* code, const 
         });
         return (gDSP) ? new LA_SMARTP<TAudioEffectInterface>(gDSP) : 0;
     }
+    #else
+    return 0;
+    #endif
 }
 #endif
 
@@ -910,6 +935,7 @@ AUDIOAPI void ProcessEffectPtr(AudioEffectPtr effect, float** input, float** out
 
 AUDIOAPI const char* GetJsonEffectPtr(AudioEffectPtr effect)
 {
+    #if defined(HAS_FAUST)
     TAudioEffectInterface* effect_tmp = static_cast<TAudioEffectInterface*>(*effect);
     TFaustAudioEffectBase* faust_effect;
     if ((faust_effect = dynamic_cast<TFaustAudioEffectBasePtr>(effect_tmp))) {
@@ -917,10 +943,14 @@ AUDIOAPI const char* GetJsonEffectPtr(AudioEffectPtr effect)
     } else {
         return "";
     }
+    #else
+    return "";
+    #endif
 }
 
 AUDIOAPI const char* GetNameEffectPtr(AudioEffectPtr effect)
 {
+    #if defined(HAS_FAUST)
     TAudioEffectInterface* effect_tmp = static_cast<TAudioEffectInterface*>(*effect);
     TFaustAudioEffectBase* faust_effect;
     if ((faust_effect = dynamic_cast<TFaustAudioEffectBasePtr>(effect_tmp))) {
@@ -928,6 +958,9 @@ AUDIOAPI const char* GetNameEffectPtr(AudioEffectPtr effect)
     } else {
         return "";
     }
+    #else
+    return "";
+    #endif
 }
 
 AUDIOAPI AudioEffectPtr MakeCopyEffectPtr(AudioEffectPtr effect)

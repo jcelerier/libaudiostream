@@ -21,12 +21,11 @@ research@grame.fr
 */
 
 #include "TAudioEffect.h"
-#include "TFaustAudioEffect.h"
 #include "UAudioTools.h"
-
-std::map<string, llvm_dsp_factory*> TCodeFaustAudioEffect::fFactoryTable;
+#if defined(HAS_FAUST)
+std::map<std::string, llvm_dsp_factory*> TCodeFaustAudioEffect::fFactoryTable;
 int TCodeFaustAudioEffect::fFactoryNumber = 0;
-
+#endif
 void TAudioEffectList::Init(float fade_in_val, float fade_in_time, float fade_out_val, float fade_out_time)
 {
     fFadeIn.setValue(fade_in_val);
@@ -40,69 +39,69 @@ void TAudioEffectList::Init(float fade_in_val, float fade_in_time, float fade_ou
 
 void TAudioEffectList::FadeIn(long fadeIn, long fadeOut)
 {
-	if (size() > 0) {
-		fFadeInFrames = fadeIn;
-		fFadeOutFrames = fadeOut;
-		Init(0.0f, float(fFadeInFrames), 1.0f, float(fFadeOutFrames));
-		fStatus = kFadeIn;
-	}
+        if (size() > 0) {
+                fFadeInFrames = fadeIn;
+                fFadeOutFrames = fadeOut;
+                Init(0.0f, float(fFadeInFrames), 1.0f, float(fFadeOutFrames));
+                fStatus = kFadeIn;
+        }
 }
 
 void TAudioEffectList::FadeOut()
 {
-	if (size() > 0) {
-		Init(0.0f, float(fFadeInFrames), 1.0f, float(fFadeOutFrames));
-		fStatus = kFadeOut;
-	}
+        if (size() > 0) {
+                Init(0.0f, float(fFadeInFrames), 1.0f, float(fFadeOutFrames));
+                fStatus = kFadeOut;
+        }
 }
 
 void TAudioEffectList::Process(float* buffer, long framesNum, long channels)
 {
-	if (size() > 0) {
-		float** input = fTemp1;
-		float** tmp_output = fTemp2;
-		float** output = fTemp2;
-		int i;
-		
-		// Fades
-		switch (fStatus) {
-		
-			case kFadeIn:
-				for (i = 0 ; i < framesNum; i++) {
-					UAudioTools::MultFrame(&buffer[i * channels], fFadeIn.tick(), channels); // To improve...
-				}
-				if (fFadeIn.lastOut() >= 1.0f) {
-					fStatus = kPlaying;
+        if (size() > 0) {
+                float** input = fTemp1;
+                float** tmp_output = fTemp2;
+                float** output = fTemp2;
+                int i;
+
+                // Fades
+                switch (fStatus) {
+
+                        case kFadeIn:
+                                for (i = 0 ; i < framesNum; i++) {
+                                        UAudioTools::MultFrame(&buffer[i * channels], fFadeIn.tick(), channels); // To improve...
+                                }
+                                if (fFadeIn.lastOut() >= 1.0f) {
+                                        fStatus = kPlaying;
                 }
-				break;
-			
-			case kFadeOut: 
-				for (i = 0 ; i < framesNum; i++) {
-					UAudioTools::MultFrame(&buffer[i * channels], fFadeOut.tick(), channels); // To improve...
-				}
-				if (fFadeOut.lastOut() <= 0.0f) {
-					fStatus = kIdle;
+                                break;
+
+                        case kFadeOut:
+                                for (i = 0 ; i < framesNum; i++) {
+                                        UAudioTools::MultFrame(&buffer[i * channels], fFadeOut.tick(), channels); // To improve...
+                                }
+                                if (fFadeOut.lastOut() <= 0.0f) {
+                                        fStatus = kIdle;
                 }
-				break;
-		}
-		
-		// Deinterleave...
-		UAudioTools::Deinterleave(input, buffer, framesNum, channels);
-		
-		// Process effects
-		for (list<TAudioEffectInterfacePtr>::iterator iter = begin(); iter != end(); iter++) {
-			TAudioEffectInterfacePtr process = *iter;
-			process->ProcessAux(input, tmp_output, framesNum, channels);
-			output = tmp_output;
-			// Swap buffers
-			float** tmp = input;
-			input = tmp_output;
-			tmp_output = tmp;
-		}
-		
-		// Interleave...
-		UAudioTools::Interleave(buffer, output, framesNum, channels);
-	}
+                                break;
+                }
+
+                // Deinterleave...
+                UAudioTools::Deinterleave(input, buffer, framesNum, channels);
+
+                // Process effects
+                for (list<TAudioEffectInterfacePtr>::iterator iter = begin(); iter != end(); iter++) {
+                        TAudioEffectInterfacePtr process = *iter;
+                        process->ProcessAux(input, tmp_output, framesNum, channels);
+                        output = tmp_output;
+                        // Swap buffers
+                        float** tmp = input;
+                        input = tmp_output;
+                        tmp_output = tmp;
+                }
+
+                // Interleave...
+                UAudioTools::Interleave(buffer, output, framesNum, channels);
+        }
 }
 
 void TAudioEffectList::Reset()
@@ -115,14 +114,14 @@ void TAudioEffectList::Reset()
 
 TAudioEffectList::~TAudioEffectList()
 {
-	int i;
-	
-	for (i = 0; i < MAX_PLUG_CHANNELS; i++) {
-		free(fTemp1[i]);
-	}
-	for (i = 0; i < MAX_PLUG_CHANNELS; i++) {
-		free(fTemp2[i]);
-	}
+        int i;
+
+        for (i = 0; i < MAX_PLUG_CHANNELS; i++) {
+                free(fTemp1[i]);
+        }
+        for (i = 0; i < MAX_PLUG_CHANNELS; i++) {
+                free(fTemp2[i]);
+        }
 }
 
 TAudioEffectListPtr TAudioEffectList::Copy()
@@ -139,23 +138,23 @@ TAudioEffectListPtr TAudioEffectList::Copy()
 
 void TAudioEffectListManager::Process(float* buffer, long framesNum, long channels)
 {
-	if (fMutex.TryLock() == 0) {
-	
-		if (fSwitchEffect) {
-			if (fCurEffectList->GetStatus() == TAudioEffectList::kIdle) { // End of fCurEffectList FadeOut
-				fCurEffectList = fNextEffectList;
-				fSwitchEffect = false;
-			} else { // CrossFade both effects
-				memcpy(fTempBuffer, buffer, sizeof(float) * framesNum * channels);
-				fCurEffectList->Process(buffer, framesNum, channels);
-				fNextEffectList->Process(fTempBuffer, framesNum, channels);
-				UAudioTools::MixFrameToFrameBlk1(buffer, fTempBuffer, framesNum, channels);
-			}
-		} else {
-			fCurEffectList->Process(buffer, framesNum, channels);
-		}
-		
-		fMutex.Unlock();
-	}
+        if (fMutex.TryLock() == 0) {
+
+                if (fSwitchEffect) {
+                        if (fCurEffectList->GetStatus() == TAudioEffectList::kIdle) { // End of fCurEffectList FadeOut
+                                fCurEffectList = fNextEffectList;
+                                fSwitchEffect = false;
+                        } else { // CrossFade both effects
+                                memcpy(fTempBuffer, buffer, sizeof(float) * framesNum * channels);
+                                fCurEffectList->Process(buffer, framesNum, channels);
+                                fNextEffectList->Process(fTempBuffer, framesNum, channels);
+                                UAudioTools::MixFrameToFrameBlk1(buffer, fTempBuffer, framesNum, channels);
+                        }
+                } else {
+                        fCurEffectList->Process(buffer, framesNum, channels);
+                }
+
+                fMutex.Unlock();
+        }
 }
 

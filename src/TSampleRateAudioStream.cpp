@@ -19,6 +19,7 @@ research@grame.fr
 
 */
 
+#if defined(HAS_SAMPLERATE)
 #include "TAudioGlobals.h"
 #include "TSampleRateAudioStream.h"
 #include "TLASException.h"
@@ -48,25 +49,25 @@ TSampleRateAudioStream::TSampleRateAudioStream(TAudioStreamPtr stream, double ra
             printf("Out of range resample quality\n");
             break;
     }
-    
-    int error;    
+
+    int error;
     fResampler = src_new(quality, stream->Channels(), &error);
     fRatio = ratio;
     if (error != 0) {
         throw TLASException(src_strerror(error));
     }
-     
+
     fReadPos = 0;
-    fReadFrames = 0;    
+    fReadFrames = 0;
     fBuffer = new TLocalNonInterleavedAudioBuffer<float>(TAudioGlobals::fBufferSize, stream->Channels());
-    
+
     fTmpBufferIn = new float[stream->Channels() * TAudioGlobals::fBufferSize];
     fTmpBufferOut = new float[stream->Channels() * TAudioGlobals::fBufferSize];
 }
 
 TSampleRateAudioStream::~TSampleRateAudioStream()
 {
-	src_delete(fResampler);
+  src_delete(fResampler);
     delete fBuffer;
     delete [] fTmpBufferIn;
     delete [] fTmpBufferOut;
@@ -80,15 +81,15 @@ TAudioStreamPtr TSampleRateAudioStream::CutBegin(long frames)
 long TSampleRateAudioStream::Read(FLOAT_BUFFER buffer, long framesNum, long framePos)
 {
     assert_stream(framesNum, framePos);
-    
+
     int written = 0;
     bool end = false;
-    
+
     float** temp1 = (float**)alloca(fBuffer->GetChannels()*sizeof(float*));
     float** temp2 = (float**)alloca(buffer->GetChannels()*sizeof(float*));
 
     while (written < framesNum && !end) {
-    
+
         if (fReadFrames == 0) {
             // Read input
             UAudioTools::ZeroFloatBlk(fBuffer->GetFrame(0, temp1), TAudioGlobals::fBufferSize, fStream->Channels());
@@ -96,9 +97,9 @@ long TSampleRateAudioStream::Read(FLOAT_BUFFER buffer, long framesNum, long fram
             fReadPos = 0;
             end = fReadFrames < TAudioGlobals::fBufferSize;
         }
-        
+
         UAudioTools::Interleave(fTmpBufferIn, fBuffer->GetFrame(fReadPos, temp1), fReadFrames, fStream->Channels());
-       
+
         SRC_DATA src_data;
         src_data.data_in = fTmpBufferIn;
         src_data.data_out = fTmpBufferOut;
@@ -106,21 +107,21 @@ long TSampleRateAudioStream::Read(FLOAT_BUFFER buffer, long framesNum, long fram
         src_data.output_frames = int(framesNum - written);
         src_data.end_of_input = end;
         src_data.src_ratio = fRatio;
-        
+
         int res = src_process(fResampler, &src_data);
         if (res != 0) {
             printf("TSampleRateAudioStream::Read ratio = %f err = %s\n", fRatio, src_strerror(res));
             return written;
         }
-        
+
         UAudioTools::Deinterleave(buffer->GetFrame(framePos, temp2), fTmpBufferOut, int(framesNum - written), fStream->Channels());
-        
+
         written += src_data.output_frames_gen;
         framePos += src_data.output_frames_gen;
         fReadPos += src_data.input_frames_used;
-        fReadFrames -= src_data.input_frames_used; 
+        fReadFrames -= src_data.input_frames_used;
     }
- 
+
     return written;
 }
 
@@ -134,4 +135,4 @@ TAudioStreamPtr TSampleRateAudioStream::Copy()
 {
     return new TSampleRateAudioStream(fStream->Copy(), fRatio);
 }
-
+#endif

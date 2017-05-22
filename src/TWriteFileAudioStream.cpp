@@ -20,6 +20,7 @@ research@grame.fr
 
 */
 
+#if defined(HAS_SNDFILE)
 #include "TWriteFileAudioStream.h"
 #include "TLASException.h"
 #include "TAudioGlobals.h"
@@ -43,47 +44,47 @@ TWriteFileAudioStream::TWriteFileAudioStream(std::string name, TAudioStreamPtr s
     fStream = stream;
     fFormat = format;
     fFramesNum = fStream->Length();
-	fFile = 0;
+  fFile = 0;
     Open();
 }
 
 TWriteFileAudioStream::~TWriteFileAudioStream()
 {
-	Flush();
-    Close();	
+  Flush();
+    Close();
     delete fMemoryBuffer;  // faux a revoir (si buffer partagé)
     delete [] fFileBuffer;
 }
 
 void TWriteFileAudioStream::Open()
 {
-	if (fFile == 0) {
-		SF_INFO info;
-		info.samplerate = TAudioGlobals::fSampleRate;
-		info.channels = fChannels;
-		info.format = fFormat;
-		char utf8name[512] = {0};
-	
-		assert(fName.size() < 512);
-		Convert2UTF8(fName.c_str(), utf8name, 512);
-		fFile = sf_open(utf8name, SFM_WRITE, &info);
-	
-		// Check file
-		if (!fFile) {
+  if (fFile == 0) {
+    SF_INFO info;
+    info.samplerate = TAudioGlobals::fSampleRate;
+    info.channels = fChannels;
+    info.format = fFormat;
+    char utf8name[512] = {0};
+
+    assert(fName.size() < 512);
+    Convert2UTF8(fName.c_str(), utf8name, 512);
+    fFile = sf_open(utf8name, SFM_WRITE, &info);
+
+    // Check file
+    if (!fFile) {
             char error[512];
             snprintf(error, 512, "Cannot open filename \'%s\'\n", utf8name);
             throw TLASException(error);
         }
-			
-		sf_seek(fFile, 0, SEEK_SET);
-		fReady = true;
+
+    sf_seek(fFile, 0, SEEK_SET);
+    fReady = true;
     }
 }
 
 void TWriteFileAudioStream::Close()
 {
-  	if (fFile) {
-		sf_close(fFile);
+    if (fFile) {
+    sf_close(fFile);
         printf("TWriteFileAudioStream::Close OK\n");
         fFile = 0;
     }
@@ -92,22 +93,22 @@ void TWriteFileAudioStream::Close()
 long TWriteFileAudioStream::Read(FLOAT_BUFFER buffer, long framesNum, long framePos)
 {
     assert_stream(framesNum, framePos);
-    
+
     long res = fStream->Read(buffer, framesNum, framePos);
     TBufferedAudioStream::Write(buffer, framesNum, framePos); // Write on disk
-	if (res < framesNum) {
+  if (res < framesNum) {
         if (fManager == 0) {
             printf("Error : stream rendered without command manager\n");
         }
         assert(fManager);
         fManager->ExecCmd((CmdPtr)CloseAux, (long)addReference(), 0, 0, 0, 0);
-	}
+  }
     return res;
 }
 
 void TWriteFileAudioStream::Reset()
 {
-	Open();
+  Open();
     fStream->Reset();
     TBufferedAudioStream::Reset();
 }
@@ -124,24 +125,24 @@ long TWriteFileAudioStream::WriteImp(FLOAT_BUFFER buffer, long framesNum, long f
 
 void TWriteFileAudioStream::Flush()
 {
-	if (fFile) {
-		// Flush the current buffer
-		if (fCurFrame < fMemoryBuffer->GetSize() / 2) {
-			TBufferedAudioStream::WriteBuffer(fMemoryBuffer, fCurFrame, 0);  // direct write 
-		} else {
-			TBufferedAudioStream::WriteBuffer(fMemoryBuffer, fCurFrame - fMemoryBuffer->GetSize() / 2, fMemoryBuffer->GetSize() / 2);  // direct write 
-		}
+  if (fFile) {
+    // Flush the current buffer
+    if (fCurFrame < fMemoryBuffer->GetSize() / 2) {
+      TBufferedAudioStream::WriteBuffer(fMemoryBuffer, fCurFrame, 0);  // direct write
+    } else {
+      TBufferedAudioStream::WriteBuffer(fMemoryBuffer, fCurFrame - fMemoryBuffer->GetSize() / 2, fMemoryBuffer->GetSize() / 2);  // direct write
+    }
 
-		// Start a new buffer
-		fCurFrame = 0;
-	}
+    // Start a new buffer
+    fCurFrame = 0;
+  }
 }
 
 // Callback called by command manager
 void TWriteFileAudioStream::CloseAux(TWriteFileAudioStreamPtr obj, long u1, long u2, long u3)
 {
     obj->Flush();
-	obj->Close();
+  obj->Close();
     obj->removeReference();
 }
-
+#endif

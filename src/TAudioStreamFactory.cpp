@@ -20,9 +20,9 @@ research@grame.fr
 
 */
 
+#include <libaudiostream-config.h>
 #include "TAudioStreamFactory.h"
 #include "TAudioGlobals.h"
-#include "TFaustAudioEffect.h"
 #include "TFadeAudioStream.h"
 #include "TLoopAudioStream.h"
 #include "TCutEndAudioStream.h"
@@ -47,8 +47,12 @@ research@grame.fr
 #include "TAudioGlobals.h"
 #include "TLASException.h"
 #include "UAudioTools.h"
+#if defined(HAS_FAUST)
+#include "TFaustAudioEffect.h"
+#endif
 #include <assert.h>
 #include <stdio.h>
+#include <sstream>
 
 /*--------------------------------------------------------------------------*/
 // External API
@@ -183,7 +187,7 @@ TAudioStreamPtr TAudioStreamFactory::MakeSelectSound(TAudioStreamPtr s, long* se
         std::vector<long> selection_aux;
         for (long i = 0; i < channels; i++) {
             if (selection[i] >= s->Channels()) {
-                stringstream error;
+                std::stringstream error;
                 error << "MakeSelectSound : channel " << selection[i] << " is out of stream channels";
                 TAudioGlobals::AddLibError(error.str());
                 return 0;
@@ -227,6 +231,8 @@ TAudioStreamPtr TAudioStreamFactory::MakeEffectSound(TAudioStreamPtr s1, TAudioE
         else if (s1->Channels() == effect->Inputs()) {
             res = new TEffectAudioStream(s1, effect);
         }
+#if defined(HAS_FAUST)
+        // TODO duplicate & split also other kinds of effects
         else if ((s1->Channels() > effect->Inputs()) && (s1->Channels() % effect->Inputs() == 0)) {
             auto dup = TLocalCodeFaustAudioEffectFactory::DuplicateEffect(effect, s1->Channels()/effect->Inputs());
             if(dup)
@@ -237,6 +243,7 @@ TAudioStreamPtr TAudioStreamFactory::MakeEffectSound(TAudioStreamPtr s1, TAudioE
             if(split)
                 res = new TEffectAudioStream(s1, split);
         }
+#endif
         else {
             stringstream error;
             error << "MakeEffectSound : stream with " << s1->Channels() << " channels is incompatible with " << effect->Inputs() << " inputs effect";

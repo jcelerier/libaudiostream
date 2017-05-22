@@ -22,6 +22,7 @@ research@grame.fr
 #ifndef __TRubberBandAudioStream__
 #define __TRubberBandAudioStream__
 
+#if defined(HAS_RUBBERBAND)
 #include "TAudioStream.h"
 #include "rubberband/RubberBandStretcher.h"
 
@@ -62,4 +63,5 @@ class TRubberBandAudioStream : public TDecoratedAudioStream
 
 typedef TRubberBandAudioStream * TRubberBandAudioStreamPtr;
 
+#endif
 #endif

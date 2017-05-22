@@ -19,6 +19,7 @@ research@grame.fr
 
 */
 
+#if defined(HAS_SNDFILE)
 #include "TReadFileAudioStream.h"
 #include "TLASException.h"
 #include "TCmdManager.h"
@@ -150,4 +151,4 @@ long TReadFileAudioStream::ReadImp(FLOAT_BUFFER buffer, long framesNum, long fra
     return res;
 }
 
-
+#endif

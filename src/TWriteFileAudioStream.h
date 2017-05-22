@@ -23,6 +23,7 @@ research@grame.fr
 #ifndef __TWriteFileAudioStream__
 #define __TWriteFileAudioStream__
 
+#if defined(HAS_SNDFILE)
 #include "TFileAudioStream.h"
 #include "TAudioConstants.h"
 #include <string>
@@ -40,12 +41,12 @@ class TWriteFileAudioStream : public TFileAudioStream, public TUnaryAudioStream
     private:
 
         long fFormat;
-        
-		void Open();
-		void Close();
-		void Flush();
-		
-		static void CloseAux(TWriteFileAudioStream* obj, long u1, long u2, long u3);
+
+    void Open();
+    void Close();
+    void Flush();
+
+    static void CloseAux(TWriteFileAudioStream* obj, long u1, long u2, long u3);
 
     protected:
 
@@ -59,26 +60,26 @@ class TWriteFileAudioStream : public TFileAudioStream, public TUnaryAudioStream
         long Read(FLOAT_BUFFER buffer, long framesNum, long framePos);
 
         void Reset();
-       
+
         TAudioStreamPtr CutBegin(long frames)
         {
             return new TWriteFileAudioStream(fName, fStream->CutBegin(frames), fFormat);
         }
-        
+
         long Length()
         {
             return fStream->Length();
         }
-        
+
         TAudioStreamPtr Copy()
         {
             return new TWriteFileAudioStream(fName, fStream->Copy(), fFormat);
         }
-        
+
         long SetPos(long frames) { return fStream->SetPos(frames); }
 };
 
 typedef TWriteFileAudioStream * TWriteFileAudioStreamPtr;
 
 #endif
-
+#endif

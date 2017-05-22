@@ -20,12 +20,16 @@ research@grame.fr
 
 */
 
+#include <libaudiostream-config.h>
 #include "TAudioGlobals.h"
 #include "TAudioConstants.h"
 #include "TRendererAudioStream.h"
 #include "TBufferedInputAudioStream.h"
 #include "TSharedBuffers.h"
+
+#if defined(HAS_FAUST)
 #include "TFaustAudioEffect.h"
+#endif
 
 #ifndef WIN32
     #include <sys/errno.h>
@@ -65,6 +69,7 @@ char TAudioGlobals::fLastLibError[] = { 0 };
 TCmdManagerPtr TDTRendererAudioStream::fManager = 0;
 TCmdManagerPtr TRTRendererAudioStream::fManager = 0;
 
+#if defined(HAS_FAUST)
 // Local effect factory
 std::map<std::string, TLocalCodeFaustAudioEffectFactory*> TAudioGlobals::fLocalFactoryTable;
 int TAudioGlobals::fLocalFactoryNumber = 0;
@@ -72,6 +77,7 @@ int TAudioGlobals::fLocalFactoryNumber = 0;
 // Remote effect factory
 std::map<std::string, TRemoteCodeFaustAudioEffectFactory*> TAudioGlobals::fRemoteFactoryTable;
 int TAudioGlobals::fRemoteFactoryNumber = 0;
+#endif
 
 // Effect table
 std::map<std::string, std::list <TAudioEffectInterfacePtr> > TAudioGlobals::fEffectTable;

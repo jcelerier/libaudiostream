@@ -49,17 +49,17 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # Sources
-set(CSRC
-#src/atomic/lffifo.c
-#src/atomic/lflifo.c
-
-src/atomic/lffifoIntel.c
-src/atomic/lflifoIntel.c
-
-# src/atomic/lffifoppc.c
-# src/atomic/lflifoppc.c
-# src/sorter/msSorter.c
-)
+if(ANDROID)
+    set(FIFOSRC
+      src/atomic/lffifoARM.cpp
+      src/atomic/lflifoARM.cpp
+    )
+else()
+    set(FIFOSRC
+      src/atomic/lffifoIntel.c
+      src/atomic/lflifoIntel.c
+    )
+endif()
 
 set(CPPSRC
 src/Envelope.cpp
@@ -84,7 +84,6 @@ src/TThreadCmdManager.cpp
 src/renderer/TAudioRenderer.cpp
 src/renderer/TOfflineRenderer.cpp
 
-# These files require Faust to build
 src/LibAudioStreamMC++.h
 src/LibAudioStreamMC.cpp
 src/TAudioGlobals.cpp
@@ -145,10 +144,10 @@ src/TFaustAudioEffect.cpp
 find_package(Threads REQUIRED)
 find_package(Jack)
 find_package(Portaudio)
-find_package(Sndfile REQUIRED)
-find_package(Samplerate REQUIRED)
-find_package(Rubberband REQUIRED)
-find_package(Faust REQUIRED)
+find_package(Sndfile)
+find_package(Samplerate)
+find_package(Rubberband)
+find_package(Faust)
 
 function(enforce_static theLibName theLibFiles theLibVar)
   message("${${theLibFiles}}")
@@ -166,6 +165,7 @@ if(LIBAUDIOSTREAM_CONTAINED)
   enforce_static(Rubberband RUBBERBAND_LIBRARIES RUBBERBAND_FOUND)
   enforce_static(Faust FAUST_LIBRARIES FAUST_FOUND)
   if(${Faust_FOUND})
+    set(LA_FAUST 1)
     find_package(LLVM REQUIRED)
     link_directories("${LLVM_LIBRARY_DIRS}")
     find_package(OpenSSL REQUIRED)
@@ -174,7 +174,7 @@ endif()
 
 if(APPLE AND LIBAUDIOSTREAM_FRAMEWORK)
   add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
-  set_target_properties(LibAudioStream PROPERTIES 
+  set_target_properties(LibAudioStream PROPERTIES
       FRAMEWORK TRUE
       FRAMEWORK_VERSION A
       MACOSX_FRAMEWORK_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/macosx/Info-LibAudioStreamPA.plist
@@ -183,9 +183,9 @@ if(APPLE AND LIBAUDIOSTREAM_FRAMEWORK)
       PUBLIC_HEADER src/LibAudioStreamMC++.h)
 else()
   if(LIBAUDIOSTREAM_SHARED)
-    add_library(LibAudioStream SHARED ${CSRC} ${CPPSRC})
+    add_library(LibAudioStream SHARED ${FIFOSRC} ${CPPSRC})
   else()
-    add_library(LibAudioStream STATIC ${CSRC} ${CPPSRC})
+    add_library(LibAudioStream STATIC ${FIFOSRC} ${CPPSRC})
   endif()
 endif()
 
@@ -282,6 +282,7 @@ if(${SNDFILE_FOUND})
 
   target_link_libraries(LibAudioStream PUBLIC ${SNDFILE_LIBRARIES})
   target_include_directories(LibAudioStream PRIVATE ${SNDFILE_INCLUDE_DIR})
+  target_compile_definitions(LibAudioStream PRIVATE HAS_SNDFILE)
 endif()
 
 # Samplerate
@@ -290,6 +291,7 @@ if(${SAMPLERATE_FOUND})
 
   target_link_libraries(LibAudioStream PUBLIC ${SAMPLERATE_LIBRARY})
   target_include_directories(LibAudioStream PRIVATE ${SAMPLERATE_INCLUDE_DIR})
+  target_compile_definitions(LibAudioStream PRIVATE HAS_SAMPLERATE)
 endif()
 
 # Rubberband
@@ -309,6 +311,7 @@ if(${FAUST_FOUND})
     target_link_libraries(LibAudioStream PUBLIC ${FAUST_LIBRARIES})
     message("LINKING WITH ${FAUST_LIBRARIES}")
     target_include_directories(LibAudioStream PRIVATE ${FAUST_INCLUDE_DIR})
+    target_compile_definitions(LibAudioStream PRIVATE HAS_FAUST)
 
     if(${LLVM_FOUND})
       target_link_libraries(LibAudioStream PUBLIC ${LLVM_LDFLAGS} ${LLVM_LIBRARIES})

@@ -19,6 +19,8 @@ research@grame.fr
 
 */
 
+#include <libaudiostream-config.h>
+#if defined(HAS_FAUST)
 #include <map>
 #include "TFaustAudioEffect.h"
 #include <iostream>
@@ -106,4 +108,5 @@ TCodeFaustAudioEffect* TRemoteCodeFaustAudioEffectFactory::CreateEffect(const st
     }
     return new TRemoteCodeFaustAudioEffect(factory);
 }
+#endif
 #endif
