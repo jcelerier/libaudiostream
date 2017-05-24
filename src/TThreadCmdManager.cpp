@@ -129,7 +129,7 @@ TThreadCmdManager::~TThreadCmdManager()
     // Wait for thread exit
     for (unsigned int i = 0; i < fThreadList.size(); i++) {
     #if defined(__APPLE__) || defined(linux)
-      #if !defined(ANDROID)
+      #if !defined(__ANDROID__)
         pthread_cancel(fThreadList[i]);
       #endif
         pthread_join(fThreadList[i], NULL);
@@ -262,7 +262,7 @@ TWaitThreadCmdManager::~TWaitThreadCmdManager()
     // Wait for thread exit
     for (unsigned int i = 0; i < fThreadList.size(); i++) {
     #if defined(__APPLE__) || defined(linux)
-      #if !defined(ANDROID)
+      #if !defined(__ANDROID__)
         pthread_cancel(fThreadList[i]);
       #endif
         pthread_join(fThreadList[i], NULL);
