@@ -81,31 +81,44 @@ TAudioStreamPtr TAudioStreamFactory::MakeBufferSound(float** buffer, long length
 
 TAudioStreamPtr TAudioStreamFactory::MakeReadSound(string name)
 {
+#if defined(HAS_SNDFILE)
     TRY_CALL
     TReadFileAudioStreamPtr sound = new TReadFileAudioStream(name, 0);
-    if (sound->SampleRate() != TAudioGlobals::fSampleRate) {
-        return new TSampleRateAudioStream(sound, double(TAudioGlobals::fSampleRate) / double(sound->SampleRate()), 2);
-    } else {
-        return sound;
-    }
+
+    #if defined(HAS_SAMPLERATE)
+      if (sound->SampleRate() != TAudioGlobals::fSampleRate)
+         return new TSampleRateAudioStream(sound, double(TAudioGlobals::fSampleRate) / double(sound->SampleRate()), 2);
+    #endif
+
+    return sound;
     CATCH_EXCEPTION_RETURN
+#else
+    return 0;
+#endif
 }
 
 TAudioStreamPtr TAudioStreamFactory::MakeRegionSound(string name, long beginFrame, long endFrame)
 {
+#if defined(HAS_SNDFILE)
     TRY_CALL
     if (beginFrame >= 0 && beginFrame <= endFrame) {
         TReadFileAudioStreamPtr sound = new TReadFileAudioStream(name, beginFrame);
-        if (sound->SampleRate() != TAudioGlobals::fSampleRate) {
+
+        #if defined(HAS_SAMPLERATE)
+        if (sound->SampleRate() != TAudioGlobals::fSampleRate)
             return new TSampleRateAudioStream(new TCutEndAudioStream(sound, UTools::Min(endFrame - beginFrame, sound->Length())), double(TAudioGlobals::fSampleRate) / double(sound->SampleRate()), 2);
-        } else {
-            return new TCutEndAudioStream(sound, UTools::Min(endFrame - beginFrame, sound->Length()));
-        }
+        #endif
+
+        return new TCutEndAudioStream(sound, UTools::Min(endFrame - beginFrame, sound->Length()));
+
     } else {
         TAudioGlobals::AddLibError("MakeRegionSound : beginFrame < 0 or endFrame > sound length");
         return 0;
     }
     CATCH_EXCEPTION_RETURN
+#else
+    return 0;
+#endif
 }
 
 TAudioStreamPtr TAudioStreamFactory::MakeLoopSound(TAudioStreamPtr sound, long n)
@@ -277,9 +290,13 @@ TAudioStreamPtr TAudioStreamFactory::MakeSoundTouchSound(TAudioStreamPtr s1, dou
 
 TAudioStreamPtr TAudioStreamFactory::MakeWriteSound(string name, TAudioStreamPtr sound, long format)
 {
+    #if defined(HAS_SNDFILE)
     TRY_CALL
     return (sound) ? new TWriteFileAudioStream(name, sound, format) : 0;
     CATCH_EXCEPTION_RETURN
+    #else
+    return 0;
+    #endif
 }
 
 TAudioStreamPtr TAudioStreamFactory::MakeRTRenderer(TAudioStreamPtr sound)
