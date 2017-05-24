@@ -20,7 +20,6 @@ research@grame.fr
 
 */
 
-#include <libaudiostream-config.h>
 #include "TExpAudioMixer.h"
 #include "TAudioRendererFactory.h"
 #include "TAudioStreamFactory.h"

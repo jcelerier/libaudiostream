@@ -65,23 +65,22 @@ DWORD WINAPI TThreadCmdManager::CmdHandler(void* arg)
 
 void TThreadCmdManager::RunAux()
 {
-    TCmd* cmd;
+    TCmd cmd;
 
-    while ((cmd = (TCmd*) fifoget(&fRunningCmd))) {
-        (*((CmdPtr)cmd->fun))(cmd->arg1, cmd->arg2, cmd->arg3, cmd->arg4, cmd->arg5);
-        lfpush(&fFreeCmd, (lifocell*)cmd);
+    while (fRunningCmd.pop(cmd)) {
+        (*((CmdPtr)cmd.fun))(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5);
+
+        fFreeCmd.push(cmd);
     }
 }
 
 TThreadCmdManager::TThreadCmdManager(long thread_num)
 {
-    TCmd* cmd;
     int i;
 
     fRunning = true;
 
     // Init variables
-    lfinit(&fFreeCmd);
 
 #if defined(__APPLE__) || defined(linux)
     pthread_mutex_init(&fLock, NULL);
@@ -91,13 +90,10 @@ TThreadCmdManager::TThreadCmdManager(long thread_num)
 #endif
 
     // Preallocate commands
+    // note: we could call reserve() and change the algo a bit
     for (i = 0; i < MAXCOMMAND; i++) {
-        cmd = (TCmd*)malloc(sizeof(TCmd));
-        if (cmd) {
-            lfpush(&fFreeCmd, (lifocell*)cmd);
-        }
+        fFreeCmd.push(TCmd{});
     }
-    fifoinit(&fRunningCmd);
 
 #if defined(__APPLE__) || defined(linux)
     struct sched_param param;
@@ -118,9 +114,6 @@ TThreadCmdManager::TThreadCmdManager(long thread_num)
 
 TThreadCmdManager::~TThreadCmdManager()
 {
-    TCmd* cmd;
-    TCmd* next;
-
     // Stop the threads...
     fRunning = false;
 
@@ -150,25 +143,14 @@ TThreadCmdManager::~TThreadCmdManager()
     #elif WIN32
         CloseHandle(fCond);
     #endif
-
-    // Free structures
-    while ((cmd = (TCmd*)lfpop(&fFreeCmd))) {
-        free(cmd);
-    }
-    cmd = (TCmd*)fifoflush(&fRunningCmd);
-    while (cmd) {
-        next = cmd->link;
-        free(cmd);
-        cmd = next;
-    }
 }
 
 void TThreadCmdManager::FlushCmds()
 {
-    TCmd* cmd;
+    TCmd cmd;
     // Remove cmds from running fifo, put them on free lifo
-    while ((cmd = (TCmd*) fifoget(&fRunningCmd))) {
-        lfpush(&fFreeCmd, (lifocell*)cmd);
+    while (fRunningCmd.pop(cmd)) {
+        fFreeCmd.push(cmd);
     }
 }
 
@@ -176,23 +158,22 @@ void TThreadCmdManager::ExecCmdAux(CmdPtr fun, long arg1, long arg2, long arg3, 
 {
     // Get a command structure from the free command list
     // fills it and push it on the running list
-    TCmd* cmd = (TCmd*)lfpop(&fFreeCmd);
-
-    if (cmd) {
-        cmd->fun = fun;
-        cmd->arg1 = arg1;
-        cmd->arg2 = arg2;
-        cmd->arg3 = arg3;
-        cmd->arg4 = arg4;
-        cmd->arg5 = arg5;
+    TCmd cmd;
+    if(fFreeCmd.pop(cmd)) {
+        cmd.fun = fun;
+        cmd.arg1 = arg1;
+        cmd.arg2 = arg2;
+        cmd.arg3 = arg3;
+        cmd.arg4 = arg4;
+        cmd.arg5 = arg5;
     // Signal the condition to wake the thread
     #if defined(__APPLE__) || defined(linux)
         pthread_mutex_lock(&fLock);
-        fifoput(&fRunningCmd, (fifocell*)cmd);
+        fRunningCmd.push(cmd);
         pthread_cond_signal(&fCond);
         pthread_mutex_unlock(&fLock);
     #elif WIN32
-        fifoput(&fRunningCmd, (fifocell*)cmd);
+        fRunningCmd.push(cmd);
         SetEvent(fCond);
     #endif
     } else {
@@ -235,33 +216,25 @@ DWORD WINAPI TWaitThreadCmdManager::CmdHandler(void* arg)
 
 void TWaitThreadCmdManager::RunAux()
 {
-    TCmd* cmd;
+    TCmd cmd;
 
-    while ((cmd = (TCmd*) fifoget(&fRunningCmd))) {
-        (*((CmdPtr)cmd->fun))(cmd->arg1, cmd->arg2, cmd->arg3, cmd->arg4, cmd->arg5);
-        lfpush(&fFreeCmd, (lifocell*)cmd);
+    while (fRunningCmd.pop(cmd)) {
+        (*((CmdPtr)cmd.fun))(cmd.arg1, cmd.arg2, cmd.arg3, cmd.arg4, cmd.arg5);
+        fFreeCmd.push(cmd);
     }
 }
 
 TWaitThreadCmdManager::TWaitThreadCmdManager(long thread_num)
 {
-    TCmd* cmd;
     int i;
 
     fRunning = true;
 
     // Init variables
-    lfinit(&fFreeCmd);
-
     // Preallocate commands
     for (i = 0; i < MAXCOMMAND; i++) {
-        cmd = (TCmd*)malloc(sizeof(TCmd));
-        if (cmd) {
-            lfpush(&fFreeCmd, (lifocell*)cmd);
-        }
+        fFreeCmd.push(TCmd{});
     }
-    fifoinit(&fRunningCmd);
-
 #if defined(__APPLE__) || defined(linux)
     struct sched_param param;
     param.sched_priority = 99;
@@ -281,9 +254,6 @@ TWaitThreadCmdManager::TWaitThreadCmdManager(long thread_num)
 
 TWaitThreadCmdManager::~TWaitThreadCmdManager()
 {
-    TCmd* cmd;
-    TCmd* next;
-
     // Stop the threads...
     fRunning = false;
 
@@ -297,25 +267,14 @@ TWaitThreadCmdManager::~TWaitThreadCmdManager()
         //WaitForSingleObject(fThreadList[i], INFINITE);
     #endif
     }
-
-    // Free structures
-    while ((cmd = (TCmd*)lfpop(&fFreeCmd))) {
-        free(cmd);
-    }
-    cmd = (TCmd*)fifoflush(&fRunningCmd);
-    while (cmd) {
-        next = cmd->link;
-        free(cmd);
-        cmd = next;
-    }
 }
 
 void TWaitThreadCmdManager::FlushCmds()
 {
-    TCmd* cmd;
+    TCmd cmd;
     // Remove cmds from running fifo, put them on free lifo
-    while ((cmd = (TCmd*) fifoget(&fRunningCmd))) {
-        lfpush(&fFreeCmd, (lifocell*)cmd);
+    while (fRunningCmd.pop(cmd)) {
+        fFreeCmd.push(cmd);
     }
 }
 
@@ -323,16 +282,15 @@ void TWaitThreadCmdManager::ExecCmdAux(CmdPtr fun, long arg1, long arg2, long ar
 {
     // Get a command structure from the free command list
     // fills it and push it on the running list
-    TCmd* cmd = (TCmd*)lfpop(&fFreeCmd);
-
-    if (cmd) {
-        cmd->fun = fun;
-        cmd->arg1 = arg1;
-        cmd->arg2 = arg2;
-        cmd->arg3 = arg3;
-        cmd->arg4 = arg4;
-        cmd->arg5 = arg5;
-        fifoput(&fRunningCmd, (fifocell*)cmd);
+    TCmd cmd;
+    if(fFreeCmd.pop(cmd)) {
+        cmd.fun = fun;
+        cmd.arg1 = arg1;
+        cmd.arg2 = arg2;
+        cmd.arg3 = arg3;
+        cmd.arg4 = arg4;
+        cmd.arg5 = arg5;
+        fRunningCmd.push(cmd);
     } else {
         printf("Error : empty cmd lifo\n");
     }

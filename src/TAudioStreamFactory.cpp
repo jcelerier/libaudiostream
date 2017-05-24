@@ -20,7 +20,6 @@ research@grame.fr
 
 */
 
-#include <libaudiostream-config.h>
 #include "TAudioStreamFactory.h"
 #include "TAudioGlobals.h"
 #include "TFadeAudioStream.h"

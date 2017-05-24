@@ -19,7 +19,6 @@ research@grame.fr
 
 */
 
-#include <libaudiostream-config.h>
 #if defined(HAS_FAUST)
 #include <map>
 #include "TFaustAudioEffect.h"

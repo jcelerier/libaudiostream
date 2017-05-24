@@ -49,18 +49,6 @@ if(UNIX AND NOT APPLE)
 endif()
 
 # Sources
-if(ANDROID)
-    set(FIFOSRC
-      src/atomic/lffifoARM.cpp
-      src/atomic/lflifoARM.cpp
-    )
-else()
-    set(FIFOSRC
-      src/atomic/lffifoIntel.c
-      src/atomic/lflifoIntel.c
-    )
-endif()
-
 set(CPPSRC
 src/Envelope.cpp
 src/la_smartpointer.cpp
@@ -183,9 +171,9 @@ if(APPLE AND LIBAUDIOSTREAM_FRAMEWORK)
       PUBLIC_HEADER src/LibAudioStreamMC++.h)
 else()
   if(LIBAUDIOSTREAM_SHARED)
-    add_library(LibAudioStream SHARED ${FIFOSRC} ${CPPSRC})
+    add_library(LibAudioStream SHARED ${CPPSRC})
   else()
-    add_library(LibAudioStream STATIC ${FIFOSRC} ${CPPSRC})
+    add_library(LibAudioStream STATIC ${CPPSRC})
   endif()
 endif()
 
@@ -208,12 +196,10 @@ set_target_properties(
         CXX_STANDARD 14)
 target_include_directories(LibAudioStream PRIVATE
   src
-  src/atomic
   src/renderer
 )
 target_include_directories(LibAudioStream SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/atomic>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/renderer>
 
     $<INSTALL_INTERFACE:include>
