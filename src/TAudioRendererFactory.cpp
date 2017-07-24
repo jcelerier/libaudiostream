@@ -26,25 +26,25 @@ research@grame.fr
 #include "TAudioGlobals.h"
 
 #ifdef __JACK__
-#include "TJackRenderer.h"
+#include <renderer/TJackRenderer.h>
 #endif
 #ifdef __NETJACK__
-#include "TNetJackRenderer.h"
+#include <renderer/TNetJackRenderer.h>
 #endif
 
 #ifdef __PORTAUDIO__
     #ifdef __PORTAUDIOV19__
-        #include "TPortAudioV19Renderer.h"
+        #include <renderer/TPortAudioV19Renderer.h>
     #else
-        #include "TPortAudioRenderer.h"
+        #include <renderer/TPortAudioRenderer.h>
     #endif
 #endif
 
 #ifdef __COREAUDIO__
-#include "TCoreAudioRenderer.h"
+#include <renderer/TCoreAudioRenderer.h>
 #endif
 
-#include "TOfflineRenderer.h"
+#include <renderer/TOfflineRenderer.h>
 
 TAudioRendererPtr TAudioRendererFactory::MakeAudioRenderer(int renderer)
 {

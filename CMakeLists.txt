@@ -196,11 +196,9 @@ set_target_properties(
         CXX_STANDARD 14)
 target_include_directories(LibAudioStream PRIVATE
   src
-  src/renderer
 )
 target_include_directories(LibAudioStream SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/renderer>
 
     $<INSTALL_INTERFACE:include>
 )

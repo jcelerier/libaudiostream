@@ -28,25 +28,25 @@ research@grame.fr
 #include "TAudioDate.h"
 
 // Renderers
-#include "TPortAudioV19Renderer.h"
+#include <renderer/TPortAudioV19Renderer.h>
 
 #ifdef __COREAUDIO__
-#include "TCoreAudioRenderer.h"
+#include <renderer/TCoreAudioRenderer.h>
 #endif
 
 #ifdef __JACK__
-#include "TJackRenderer.h"
+#include <renderer/TJackRenderer.h>
 #endif
 
 #ifdef __NETJACK__
-#include "TNetJackRenderer.h"
+#include <renderer/TNetJackRenderer.h>
 #endif
 
 #if defined(HAS_FAUST)
 #include "TFaustAudioEffect.h"
 #endif
 
-#include "TOfflineRenderer.h"
+#include <renderer/TOfflineRenderer.h>
 
 #ifdef WIN32
     #define	AUDIOAPI __declspec(dllexport)
