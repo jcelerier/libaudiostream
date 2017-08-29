@@ -255,6 +255,14 @@ class TFaustAudioEffectBase : public TAudioEffectInterface, public UI
             fUITable.push_back(new Bargraph(buildPath(label), zone, min, max));
         }
 
+        long GetControlOutCount() override
+        { return 0; }
+        void GetControlOutParam(long param, char* label, float* min, float* max, float* init) override
+        { }
+        float GetControlOutValue(long param)
+        { return 0.f; }
+
+
         virtual void show() {}
         virtual void run() {}
 

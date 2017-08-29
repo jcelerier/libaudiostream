@@ -97,6 +97,10 @@ class AUDIO_EXPORTS TAudioEffectInterface : public la_smartable1
         virtual float GetControlValue(long param) = 0;
         virtual float GetControlValue(const char* labe) = 0;
 
+        virtual long GetControlOutCount() = 0;
+        virtual void GetControlOutParam(long param, char* label, float* min, float* max, float* init) = 0;
+        virtual float GetControlOutValue(long param) = 0;
+
         virtual void SetName(const std::string& name) = 0;
         virtual std::string GetName() = 0;
 
