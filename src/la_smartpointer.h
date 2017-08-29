@@ -59,7 +59,7 @@ class AUDIO_EXPORTS la_smartable {
         virtual ~la_smartable()
         {
             assert (refCount == 0);
-            printf("~la_smartable %" PRIxPTR "\n", (uintptr_t)this);
+            // printf("~la_smartable %" PRIxPTR "\n", (uintptr_t)this);
         }
         la_smartable& operator=(const la_smartable&) { return *this; }
 };
@@ -100,7 +100,7 @@ template<class T> class LA_SMARTP {
         LA_SMARTP()	: fSmartPtr(nullptr) {}
         //! build a smart pointer from a class pointer
         LA_SMARTP(T* rawptr) : fSmartPtr(rawptr)  {
-            printf("LA_SMARTP %" PRIxPTR "\n", (uintptr_t)rawptr);
+            // printf("LA_SMARTP %" PRIxPTR "\n", (uintptr_t)rawptr);
             if (fSmartPtr) fSmartPtr->addReference();
         }
         //! build a smart pointer from an convertible class reference

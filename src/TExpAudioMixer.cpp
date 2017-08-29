@@ -184,7 +184,51 @@ TStreamCommandPtr TExpAudioMixer::GetStreamCommand(TAudioStreamPtr stream)
 
 long TExpAudioMixer::SetPos(audio_frame_t frames)
 {
-    // TODO
-    fCurFrame = frames;
+  for(auto it = fStreamCommands.begin(); it != fStreamCommands.end(); )
+  {
+    TCommand* command = (*it);
+    if(auto stream = dynamic_cast<TStreamCommand*>(command))
+    {
+      auto& startDate = *stream->fStartDate;
+      auto& stopDate = *stream->fStopDate;
+
+      if(stopDate < frames)
+      {
+        it = fStreamCommands.erase(it);
+        continue;
+      }
+      else if(startDate < frames && stopDate >= frames)
+      {
+        stream->fStream->SetPos(frames - startDate.getDate());
+        startDate = 0;
+        if(stopDate != INT64_MAX)
+          stopDate -= frames;
+      }
+      else
+      {
+        if(startDate != INT64_MAX)
+          startDate -= frames;
+        if(stopDate != INT64_MAX)
+          stopDate -= frames;
+      }
+    }
+    ++it;
+  }
+
+  for(auto it = fControlCommands.begin(); it != fControlCommands.end(); )
+  {
+    auto ctrl = *it;
+    if(*ctrl->fStartDate < frames)
+    {
+      it = fControlCommands.erase(it);
+      continue;
+    }
+    else
+    {
+      *ctrl->fStartDate -= frames;
+    }
+    ++it;
+  }
+    fCurFrame = 0;
     return fCurFrame;
 }

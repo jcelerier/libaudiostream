@@ -57,6 +57,29 @@ class TSymbolicDate : public la_smartable1
         {
             return fRealDate < date.fRealDate;
         }
+        bool operator< (audio_frame_t date)
+        {
+            return fRealDate < date;
+        }
+        bool operator>= (audio_frame_t date)
+        {
+          return fRealDate >= date;
+        }
+
+        TSymbolicDate& operator-=(audio_frame_t frames)
+        {
+          fRealDate -= frames;
+          return *this;
+        }
+        TSymbolicDate& operator=(audio_frame_t frames)
+        {
+          fRealDate = frames;
+          return *this;
+        }
+        bool operator!=(audio_frame_t frames)
+        {
+          return fRealDate != frames;
+        }
 
         audio_frame_t GetDate() const { return fRealDate; }
 
