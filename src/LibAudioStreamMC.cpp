@@ -865,8 +865,9 @@ AUDIOAPI AudioEffectPtr MakeRemoteFaustAudioEffectPtr(const char* code, const ch
 
 #ifdef __APPLE__
 #include<dispatch/dispatch.h>
+#if defined(HAS_FAUST)
 static TCodeFaustAudioEffect* gDSP = 0;
-
+#endif
 AUDIOAPI AudioEffectPtr MakeDispatchFaustAudioEffectPtr(const char* code, const char* library_path, const char* draw_path)
 {
     #if defined(HAS_FAUST)

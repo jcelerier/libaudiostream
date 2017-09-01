@@ -5,10 +5,10 @@ find_path(RUBBERBAND_INCLUDE_DIR rubberband/rubberband-c.h
 
 set(RUBBERBAND_NAMES ${RUBBERBAND_NAMES} rubberband librubberband)
 find_library(RUBBERBAND_LIBRARY NAMES ${RUBBERBAND_NAMES}
-    HINTS ${SAMPLERATE_LIB_DIR_HINT})
+    HINTS ${RUBBERBAND_LIB_DIR_HINT})
 
 if(RUBBERBAND_INCLUDE_DIR AND RUBBERBAND_LIBRARY)
-        set(RUBBERBAND_FOUND TRUE)
+    set(RUBBERBAND_FOUND TRUE)
 endif()
 
 include(FindPackageHandleStandardArgs)
